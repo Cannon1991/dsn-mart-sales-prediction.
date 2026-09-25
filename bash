@@ -23,3 +23,15 @@ git push origin main
 
 # 5. Push up the clean repo state
 !git push origin main --force
+# 1. Fetch online updates to stay completely in sync
+!git pull origin main --rebase
+
+# 2. Force remove old file configurations from git tracking memory
+!git rm -f app.py model_pipeline.py 2>/dev/null
+
+# 3. Add the two newly verified files
+!git add streamlit_app.py requirements.txt
+
+# 4. Commit and upload directly to GitHub
+!git commit -m "fix: production app release sync"
+!git push origin main --force
