@@ -18,7 +18,15 @@ git remote add origin https://github.com
 
 # 6. Securely push and deploy your project files live to the master cloud branch
 git push -u origin main
-%%writefile app.py
-# (Paste the exact code text block from above directly inside this cell)
-ls
-streamlit run app.py
+# 1. Rename your local user interface script file to match the default port standard
+mv app.py streamlit_app.py
+
+# 2. Stage the file removal and addition updates into git tracking memory
+git add streamlit_app.py
+git rm app.py
+
+# 3. Save the branch updates with a tracking comment marker
+git commit -m "fix: updated dashboard entry script name to match standard cloud portal defaults"
+
+# 4. Push the structural file updates directly up to your GitHub repository
+git push origin main
