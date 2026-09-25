@@ -1,6 +1,2 @@
-# 1. Write the code above into an app.py file inside the notebook environment
-%%writefile app.py
-# (Paste the full cleaned script code above here)
-
-# 2. Run the application in the background and expose it to a public web link
-!streamlit run app.py & npx localtunnel --port 8501
+echo -e "streamlit>=1.35.0\npandas>=2.0.0\nnumpy>=1.24.0\nscikit-learn>=1.3.0" > requirements.txt
+echo -e "train.csv\ntest.csv\nsubmission.csv\n.ipynb_checkpoints/\n__pycache__/" > .gitignore
