@@ -1,3 +1,4 @@
+ls -la
 # 1. Force stage both the script and the model binary file
 git add -f streamlit_app.py models/artifacts.pkl requirements.txt .gitignore
 
