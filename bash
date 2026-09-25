@@ -27,6 +27,15 @@ git rm app.py
 
 # 3. Save the branch updates with a tracking comment marker
 git commit -m "fix: updated dashboard entry script name to match standard cloud portal defaults"
+# 1. Stage the newly rewritten streamlit_app.py file for upload tracking
+git add streamlit_app.py
+
+# 2. Save your update with a clear confirmation commit message
+git commit -m "fix: updated streamlit_app.py with clean interface code parameters"
+
+# 3. Push your update straight to your primary GitHub master branch
+git push origin main
+
 
 # 4. Push the structural file updates directly up to your GitHub repository
 git push origin main
