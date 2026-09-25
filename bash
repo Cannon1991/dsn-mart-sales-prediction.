@@ -39,3 +39,12 @@ git push origin main
 
 # 4. Push the structural file updates directly up to your GitHub repository
 git push origin main
+
+# 1. Force add the models folder structure to bypass any hidden .gitignore locks
+git add -f models/artifacts.pkl
+
+# 2. Save the tracking parameters with a deployment status marker
+git commit -m "deploy: uploaded pre-trained random forest model artifact weights binary"
+
+# 3. Push it straight up to your live master repository branch layout
+git push origin main
