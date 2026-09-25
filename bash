@@ -35,3 +35,18 @@ git push origin main
 # 4. Commit and upload directly to GitHub
 !git commit -m "fix: production app release sync"
 !git push origin main --force
+# 1. Fetch remote changes to stay aligned with the cloud branch
+!git pull origin main --rebase
+
+# 2. Force remove all old, corrupted, or misnamed files from Git
+!git rm -f app.py model_pipeline.py dsn_mart.py dsn_mart_sales_prediction.py 2>/dev/null
+
+# 3. Add the clean script and configuration files to the staging area
+!git add streamlit_app.py requirements.txt
+
+# 4. Save and commit your clean updates
+!git commit -m "fix: removed embedded terminal commands and standardized entry point"
+
+# 5. Force-push to clear out any old history conflicts on GitHub
+!git push origin main --force
+
