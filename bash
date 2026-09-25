@@ -1,9 +1,8 @@
-ls -la
-# 1. Force stage both the script and the model binary file
-git add -f streamlit_app.py models/artifacts.pkl requirements.txt .gitignore
+# 1. Unstage the corrupted references and add the fresh script version
+git add streamlit_app.py
 
-# 2. Apply a clean tracking commit message
-git commit -m "deploy: root directory streamlit configuration sync with model binary weights"
+# 2. Record the fixed tracking commit marker message
+git commit -m "fix: replaced notebook json structure with native raw python text"
 
-# 3. Securely push to the cloud master main branch
+# 3. Securely upload the files online
 git push origin main
