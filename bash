@@ -18,3 +18,7 @@ git remote add origin https://github.com
 
 # 6. Securely push and deploy your project files live to the master cloud branch
 git push -u origin main
+%%writefile app.py
+# (Paste the exact code text block from above directly inside this cell)
+ls
+streamlit run app.py
