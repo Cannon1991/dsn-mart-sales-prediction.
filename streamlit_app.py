@@ -1,6 +1,6 @@
 import os
 
-upgraded_dashboard_code = """import streamlit as st
+visual_app_script = """import streamlit as st
 import pandas as pd
 import numpy as np
 import io
@@ -13,11 +13,11 @@ st.set_page_config(
     page_icon="📈"
 )
 
-# 📊 Historical Ingestion Matrix Data Mocks
+# 📊 Deterministic Operational Mock Ingestion Matrix Data
 def get_historical_analytics_data():
     sample_records = [
         ['row_00000','PRD-PRFP9S',14.252,'Low Fat',0.0271,'Frozen Foods',81.37,'STORE-AGY',45,'Large','Tier_3','Standard Supermarket',1764.98],
-        ['row_00001','PRD-PXXK71',7.698,'Low Fat',0.0720,'HEALTH AND HYGIENE',42.05,'STORE-YLW',35,'Small','Tier_1','Standard Supermarket',342.13],
+        ['row_00001','PRD-PXXK71',7.698,'Low Fat',0.072,'HEALTH AND HYGIENE',42.05,'STORE-YLW',35,'Small','Tier_1','Standard Supermarket',342.13],
         ['row_00002','PRD-V5MOIJ',14.264,'Regular',0.0421,'Canned',41.35,'STORE-89Z',33,'Medium','Tier_1','Standard Supermarket',378.85],
         ['row_00003','PRD-UN5Z3J',12.000,'Regular',0.0449,'SOFT DRINKS',174.35,'STORE-7WS',47,'Medium','Tier_3','Flagship Hypermarket',5595.72],
         ['row_00004','PRD-6RDQYB',10.338,'Regular',0.0120,'MEAT',203.06,'STORE-9RG',28,'Small','Tier_2','Standard Supermarket',2375.36],
@@ -57,15 +57,15 @@ def train_backup_model(df):
     preprocessors = {'cat_sales_map': cat_sales_map, 'label_encoders': label_encoders}
     return fallback_model, preprocessors, features
 
-# Load analytics datasets and build internal predictive model rules
+# Ingest and train configuration components synchronously
 raw_analytics_df = get_historical_analytics_data()
-model, preprocessors, features = train_backup_model(raw_analytics_df)
+model, preprocessors, features = train_and_build = train_backup_model(raw_analytics_df)
 
-# --- WEB APPLICATION LAYOUT GRAPHICS ---
+# --- USER INTERFACE APP LAYOUT ---
 st.title("📈 DSN Mart Retail Intelligence & Revenue Engine")
 st.markdown("Optimize product distribution, spatial visibility parameters, and projected store layout revenue matrix yields across Nigeria.")
 
-# Tabbed Layout Separations
+# Tabbed Layout Separation Layers
 tab1, tab2 = st.tabs(["🔮 Demand Forecasting Engine", "📊 Operational Revenue Analytics"])
 
 with tab1:
@@ -111,28 +111,34 @@ with tab1:
         label_encoders = preprocessors['label_encoders']
         for col in ['fat_content', 'product_category', 'store_code', 'store_size', 'store_location_tier', 'store_format']:
             le = label_encoders[col]
-            input_data[col] = input_data[col].astype(str).map(lambda s: s if s in le.classes_ else le.classes_)
+            input_data[col] = input_data[col].astype(str).map(lambda s: s if s in le.classes_ else le.classes_[0])
             input_data[col] = le.transform(input_data[col])
             
         X_infer = input_data[features]
-        prediction = model.predict(X_infer)
+        prediction = model.predict(X_infer)[0]
         st.success(f"### 📈 Projected Single-SKU Sales Estimation: **₦ {prediction:,.2f}**")
 
 with tab2:
     st.markdown("### Regional Store Performance Insights & Visual Analytics")
     
+    # Baseline Summary KPI Metrics Card Layer
     m1, m2, m3 = st.columns(3)
-    m1.metric("Total Fleet Sample Revenue", f"₦ {raw_analytics_df['total_sales'].sum():,.2f}")
+    m1.metric("Total Sample Fleet Revenue", f"₦ {raw_analytics_df['total_sales'].sum():,.2f}")
     m2.metric("Average Departmental Price Index", f"₦ {raw_analytics_df['product_price'].mean():,.2f}")
     m3.metric("Monitored Distribution Hubs Node Fleet", f"{raw_analytics_df['store_code'].nunique()} Active Nodes")
     
     st.markdown("---")
+    
+    # Visualization Matrix Columns
     v_col1, v_col2 = st.columns(2)
     
     with v_col1:
         st.subheader("🏬 Revenue Matrix by Store Format Group")
+        # Aggregating aggregate groupings for the interactive charts
         format_chart_data = raw_analytics_df.groupby('store_format')['total_sales'].sum().reset_index()
         format_chart_data = format_chart_data.set_index('store_format')
+        
+        # Streamlit Native Interactive Bar Chart
         st.bar_chart(format_chart_data, y="total_sales", color="#FF4B4B")
         st.caption("Bar chart tracking gross sales output variables based on store size formats.")
 
@@ -141,12 +147,13 @@ with tab2:
         category_chart_data = raw_analytics_df.groupby('product_category')['total_sales'].mean().reset_index()
         category_chart_data = category_chart_data.sort_values(by="total_sales", ascending=False)
         category_chart_data = category_chart_data.set_index('product_category')
+        
+        # Streamlit Native Interactive Bar Chart
         st.bar_chart(category_chart_data, y="total_sales", color="#29B5E8")
         st.caption("Bar chart analyzing performance metrics grouped across department structures.")
 """
 
-# Overwrite into the filename string Streamlit Cloud is actively searching for
-with open("dsn_mart_sales_prediction.py", "w", encoding="utf-8") as f:
-    f.write(upgraded_dashboard_code)
+with open("streamlit_app.py", "w", encoding="utf-8") as f:
+    f.write(visual_app_script)
 
-print("⚡ Standalone file 'dsn_mart_sales_prediction.py' has been force-created fresh with no syntax errors!")
+print("✅ SUCCESS: Upgraded visual dashboard successfully saved onto 'streamlit_app.py'!")
