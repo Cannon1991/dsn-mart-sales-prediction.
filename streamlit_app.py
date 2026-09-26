@@ -1,6 +1,5 @@
 import os
 
-visual_and_batch_script = """import streamlit as st
 import pandas as pd
 import numpy as np
 import io
