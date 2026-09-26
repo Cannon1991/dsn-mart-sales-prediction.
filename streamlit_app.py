@@ -1,5 +1,4 @@
-import os
-
+import streamlit as st
 import pandas as pd
 import numpy as np
 import io
@@ -108,12 +107,12 @@ with tab1:
         label_encoders = preprocessors['label_encoders']
         for col in ['fat_content', 'product_category', 'store_code', 'store_size', 'store_location_tier', 'store_format']:
             le = label_encoders[col]
-            input_data[col] = input_data[col].astype(str).map(lambda s: s if s in le.classes_ else le.classes_[0])
+            input_data[col] = input_data[col].astype(str).map(lambda s: s if s in le.classes_ else le.classes_)
             input_data[col] = le.transform(input_data[col])
             
         X_infer = input_data[features]
         prediction = model.predict(X_infer)
-        st.success(f"### 📈 Projected Single-SKU Sales Estimation: **₦ {prediction[0]:,.2f}**")
+        st.success(f"### 📈 Projected Single-SKU Sales Estimation: **₦ {prediction:,.2f}**")
 
 with tab2:
     st.markdown("### Regional Store Performance Insights & Visual Analytics")
@@ -146,15 +145,18 @@ with tab3:
     
     if uploaded_file is not None:
         try:
-            # Parse inbound worksheet sheet rows
             test_batch_df = pd.read_csv(uploaded_file)
             st.info(f"📋 File mapped successfully! Detected **{len(test_batch_df)} records** awaiting feature mapping pipeline.")
             
-            # Re-running preprocessing steps symmetrically to avoid downstream alignment shifts
             processed_batch = test_batch_df.copy()
             processed_batch['product_category'] = processed_batch['product_category'].astype(str).str.upper().str.strip()
             processed_batch['fat_content'] = processed_batch['fat_content'].astype(str).str.upper().str.strip()
             
-            # Fill missing column parameters cleanly using baseline proxies
             processed_batch['product_weight_kg'] = processed_batch['product_weight_kg'].fillna(12.0)
             processed_batch['store_size'] = processed_batch['store_size'].fillna('Medium')
+            
+            processed_batch['price_per_kg'] = processed_batch['product_price'] / (processed_batch['product_weight_kg'] + 1e-5)
+            processed_batch['visibility_price_ratio'] = processed_batch['shelf_visibility'] * processed_batch['product_price']
+            processed_batch['store_establishment_year'] = 2026 - processed_batch['store_age_years']
+            
+            cat_sales_map = preprocessors['cat_sales_map']
