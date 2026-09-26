@@ -62,7 +62,7 @@ model, preprocessors, features = train_backup_model(raw_analytics_df)
 st.title("📈 DSN Mart Retail Intelligence & Revenue Engine")
 st.markdown("Optimize product distribution, spatial visibility parameters, and projected store layout revenue matrix yields across Nigeria.")
 
-tab1, tab2 = st.tabs(["🔮 Demand Forecasting Engine", "📊 Operational Revenue Analytics"])
+tab1, tab2, tab3 = st.tabs(["🔮 Demand Forecasting Engine", "📊 Operational Revenue Analytics", "📂 Batch Prediction Center"])
 
 with tab1:
     st.markdown("### Interactive Single-SKU Forecast Estimator")
@@ -136,3 +136,27 @@ with tab2:
         category_chart_data = category_chart_data.sort_values(by="total_sales", ascending=False)
         category_chart_data = category_chart_data.set_index('product_category')
         st.bar_chart(category_chart_data, y="total_sales", color="#29B5E8")
+
+with tab3:
+    st.markdown("### 📥 Bulk Processing Pipeline Module")
+    st.markdown("Upload your structural test dataset file (`test.csv`) to calculate batch-inferences and export prediction sets instantly.")
+    
+    uploaded_file = st.file_uploader("Choose a CSV file containing inventory rows", type="csv")
+    
+    if uploaded_file is not None:
+        try:
+            test_batch_df = pd.read_csv(uploaded_file)
+            st.info(f"📋 File mapped successfully! Detected **{len(test_batch_df)} records** awaiting feature mapping pipeline.")
+            
+            processed_batch = test_batch_df.copy()
+            processed_batch['product_category'] = processed_batch['product_category'].astype(str).str.upper().str.strip()
+            processed_batch['fat_content'] = processed_batch['fat_content'].astype(str).str.upper().str.strip()
+            
+            processed_batch['product_weight_kg'] = processed_batch['product_weight_kg'].fillna(12.0)
+            processed_batch['store_size'] = processed_batch['store_size'].fillna('Medium')
+            
+            processed_batch['price_per_kg'] = processed_batch['product_price'] / (processed_batch['product_weight_kg'] + 1e-5)
+            processed_batch['visibility_price_ratio'] = processed_batch['shelf_visibility'] * processed_batch['product_price']
+            processed_batch['store_establishment_year'] = 2026 - processed_batch['store_age_years']
+            
+            cat_sales_map = preprocessors['cat_sales_map']
