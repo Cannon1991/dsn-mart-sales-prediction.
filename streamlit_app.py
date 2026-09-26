@@ -1,17 +1,21 @@
+%%writefile streamlit_app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
 import io
+import pickle
+import os
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor
 
+# Ensure layout is configured before any structural processing elements render
 st.set_page_config(
     page_title="DSN Mart Revenue Intelligence Core", 
     layout="wide", 
     page_icon="📈"
 )
 
-# 📊 Historical Ingestion Matrix Data Mocks
+# 📊 Baseline Operational Mock Data Ingestion Layer
 def get_historical_analytics_data():
     sample_records = [
         ['row_00000','PRD-PRFP9S',14.252,'Low Fat',0.0271,'Frozen Foods',81.37,'STORE-AGY',45,'Large','Tier_3','Standard Supermarket',1764.98],
@@ -29,16 +33,27 @@ def get_historical_analytics_data():
     df['fat_content'] = df['fat_content'].astype(str).str.upper().str.strip()
     return df
 
-def train_backup_model(df):
+# Fail-Safe Local Model Inbound Trainer (Generates robust structures if artifacts are missing)
+def train_fallback_ensemble_model(df):
     df_train = df.copy()
+    df_train['product_type_prefix'] = df_train['product_code'].astype(str).str[:3]
     df_train['price_per_kg'] = df_train['product_price'] / (df_train['product_weight_kg'] + 1e-5)
     df_train['visibility_price_ratio'] = df_train['shelf_visibility'] * df_train['product_price']
     df_train['store_establishment_year'] = 2026 - df_train['store_age_years']
+    df_train['is_visibility_allocated'] = (df_train['shelf_visibility'] > 0).astype(int)
     
     cat_sales_map = df_train.groupby('product_category')['total_sales'].mean().to_dict()
     df_train['cat_historical_avg_sales'] = df_train['product_category'].map(cat_sales_map).fillna(0)
     
-    categorical_cols = ['fat_content', 'product_category', 'store_code', 'store_size', 'store_location_tier', 'store_format']
+    mean_price_map = df_train.groupby('product_category')['product_price'].mean().to_dict()
+    mean_vis_map = df_train.groupby('product_category')['shelf_visibility'].mean().to_dict()
+    df_train['price_to_category_avg_ratio'] = df_train['product_price'] / df_train['product_category'].map(mean_price_map).fillna(1.0)
+    df_train['relative_visibility_in_category'] = df_train['shelf_visibility'] / df_train['product_category'].map(mean_vis_map).fillna(1.0)
+    df_train['sku_historical_mean_sales'] = df_train['total_sales'].mean()
+    
+    df_train['composite_store_density_proxy'] = df_train['store_format'].astype(str) + "_" + df_train['store_size'].astype(str)
+    
+    categorical_cols = ['fat_content', 'product_category', 'store_code', 'store_size', 'store_location_tier', 'store_format', 'product_type_prefix', 'composite_store_density_proxy']
     label_encoders = {}
     for col in categorical_cols:
         le = LabelEncoder()
@@ -49,19 +64,54 @@ def train_backup_model(df):
     X = df_train[features]
     y = df_train['total_sales']
     
-    fallback_model = RandomForestRegressor(n_estimators=50, max_depth=6, random_state=42)
-    fallback_model.fit(X, y)
+    # Base Estimators Proxy for Local Notebook runtime environments
+    m1 = RandomForestRegressor(n_estimators=40, max_depth=6, random_state=42)
+    m2 = RandomForestRegressor(n_estimators=30, max_depth=5, random_state=24)
+    m1.fit(X, y)
+    m2.fit(X, y)
     
-    preprocessors = {'cat_sales_map': cat_sales_map, 'label_encoders': label_encoders}
-    return fallback_model, preprocessors, features
+    preprocessors = {
+        'cat_sales_map': cat_sales_map, 'label_encoders': label_encoders,
+        'mean_price_map': mean_price_map, 'mean_vis_map': mean_vis_map,
+        'sku_velocity_map': {}, 'global_sales_mean': df_train['total_sales'].mean()
+    }
+    return m1, m2, preprocessors, features, 0.50
 
+@st.cache_resource
+def load_pipeline_artifacts():
+    raw_df = get_historical_analytics_data()
+    # 1. Look for Production Ensemble Binary on GitHub
+    if os.path.exists('models/artifacts.pkl'):
+        try:
+            with open('models/artifacts.pkl', 'rb') as f:
+                artifacts = pickle.load(f)
+                if 'lgb_model' in artifacts and 'cat_model' in artifacts:
+                    return (
+                        artifacts['lgb_model'], artifacts['cat_model'], 
+                        artifacts['preprocessors'], artifacts['features'], 
+                        artifacts['best_weight'], True
+                    )
+        except Exception:
+            pass
+    # 2. Trigger fallback tracking configurations if serialization files are absent
+    m1, m2, preprocessors, features, weight = train_fallback_ensemble_model(raw_df)
+    return m1, m2, preprocessors, features, weight, False
+
+# Execute Data Ingestion Lifecycle Methods
 raw_analytics_df = get_historical_analytics_data()
-model, preprocessors, features = train_backup_model(raw_analytics_df)
+model1, model2, preprocessors, features, blend_weight, is_production_ensemble = load_pipeline_artifacts()
 
-# --- APP LAYOUT ---
+# --- INTERFACE APP WEB GRAPHICS ---
 st.title("📈 DSN Mart Retail Intelligence & Revenue Engine")
 st.markdown("Optimize product distribution, spatial visibility parameters, and projected store layout revenue matrix yields across Nigeria.")
 
+# Display Context Alert Banner depending on model architecture
+if is_production_ensemble:
+    st.sidebar.success("🏆 Deployed Status: Live Production LightGBM + CatBoost Ensemble Active")
+else:
+    st.sidebar.info("💡 Deployed Status: Fallback Baseline Engine Active (Running on Native Tree Modules)")
+
+# Tabbed Layout Separation Layers
 tab1, tab2, tab3 = st.tabs(["🔮 Demand Forecasting Engine", "📊 Operational Revenue Analytics", "📂 Batch Prediction Center"])
 
 with tab1:
@@ -94,69 +144,16 @@ with tab1:
             'store_size': store_size, 'store_location_tier': store_location_tier, 'store_format': store_format
         }])
         
+        # 🧪 Standard Preprocessing & Feature Engineering Layer Transforms
         input_data['product_category'] = input_data['product_category'].astype(str).str.upper().str.strip()
         input_data['fat_content'] = input_data['fat_content'].astype(str).str.upper().str.strip()
+        input_data['product_type_prefix'] = input_data['product_code'].astype(str).str[:3]
         
         input_data['price_per_kg'] = input_data['product_price'] / (input_data['product_weight_kg'] + 1e-5)
         input_data['visibility_price_ratio'] = input_data['shelf_visibility'] * input_data['product_price']
+        input_data['is_visibility_allocated'] = (input_data['shelf_visibility'] > 0).astype(int)
         input_data['store_establishment_year'] = 2026 - input_data['store_age_years']
         
-        cat_sales_map = preprocessors['cat_sales_map']
-        input_data['cat_historical_avg_sales'] = input_data['product_category'].map(cat_sales_map).fillna(0)
-        
-        label_encoders = preprocessors['label_encoders']
-        for col in ['fat_content', 'product_category', 'store_code', 'store_size', 'store_location_tier', 'store_format']:
-            le = label_encoders[col]
-            input_data[col] = input_data[col].astype(str).map(lambda s: s if s in le.classes_ else le.classes_)
-            input_data[col] = le.transform(input_data[col])
-            
-        X_infer = input_data[features]
-        prediction = model.predict(X_infer)
-        st.success(f"### 📈 Projected Single-SKU Sales Estimation: **₦ {prediction:,.2f}**")
-
-with tab2:
-    st.markdown("### Regional Store Performance Insights & Visual Analytics")
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Total Fleet Sample Revenue", f"₦ {raw_analytics_df['total_sales'].sum():,.2f}")
-    m2.metric("Average Departmental Price Index", f"₦ {raw_analytics_df['product_price'].mean():,.2f}")
-    m3.metric("Monitored Distribution Hubs Node Fleet", f"{raw_analytics_df['store_code'].nunique()} Active Nodes")
-    
-    st.markdown("---")
-    v_col1, v_col2 = st.columns(2)
-    
-    with v_col1:
-        st.subheader("🏬 Revenue Matrix by Store Format Group")
-        format_chart_data = raw_analytics_df.groupby('store_format')['total_sales'].sum().reset_index()
-        format_chart_data = format_chart_data.set_index('store_format')
-        st.bar_chart(format_chart_data, y="total_sales", color="#FF4B4B")
-
-    with v_col2:
-        st.subheader("🛍️ Revenue Matrix by Product Category Layer")
-        category_chart_data = raw_analytics_df.groupby('product_category')['total_sales'].mean().reset_index()
-        category_chart_data = category_chart_data.sort_values(by="total_sales", ascending=False)
-        category_chart_data = category_chart_data.set_index('product_category')
-        st.bar_chart(category_chart_data, y="total_sales", color="#29B5E8")
-
-with tab3:
-    st.markdown("### 📥 Bulk Processing Pipeline Module")
-    st.markdown("Upload your structural test dataset file (`test.csv`) to calculate batch-inferences and export prediction sets instantly.")
-    
-    uploaded_file = st.file_uploader("Choose a CSV file containing inventory rows", type="csv")
-    
-    if uploaded_file is not None:
-        try:
-            test_batch_df = pd.read_csv(uploaded_file)
-            st.info(f"📋 File mapped successfully! Detected **{len(test_batch_df)} records** awaiting feature mapping pipeline.")
-            
-            processed_batch = test_batch_df.copy()
-            processed_batch['product_category'] = processed_batch['product_category'].astype(str).str.upper().str.strip()
-            processed_batch['fat_content'] = processed_batch['fat_content'].astype(str).str.upper().str.strip()
-            
-            processed_batch['product_weight_kg'] = processed_batch['product_weight_kg'].fillna(12.0)
-            processed_batch['store_size'] = processed_batch['store_size'].fillna('Medium')
-            
-            processed_batch['price_per_kg'] = processed_batch['product_price'] / (processed_batch['product_weight_kg'] + 1e-5)
-            processed_batch['visibility_price_ratio'] = processed_batch['shelf_visibility'] * processed_batch['product_price']
-            processed_batch['store_establishment_year'] = 2026 - processed_batch['store_age_years']
-            
-            cat_sales_map = preprocessors['cat_sales_map']
+        input_data['price_to_category_avg_ratio'] = input_data['product_price'] / preprocessors['mean_price_map'].get(product_category, product_price)
+        input_data['relative_visibility_in_category'] = input_data['shelf_visibility'] / preprocessors['mean_vis_map'].get(product_category, 1.0)
+        input_data['sku_historical_mean_sales'] = preprocessors.get('sku_velocity_map', {}).get(product_code, preprocessors['global_sales_mean'])
