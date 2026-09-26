@@ -1,6 +1,4 @@
-import os
-
-production_app_script = """import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 import io
@@ -13,7 +11,7 @@ st.set_page_config(
     page_icon="📈"
 )
 
-# Historical Ingestion Matrix Data Mocks
+# 📊 Historical Ingestion Matrix Data Mocks
 def get_historical_analytics_data():
     sample_records = [
         ['row_00000','PRD-PRFP9S',14.252,'Low Fat',0.0271,'Frozen Foods',81.37,'STORE-AGY',45,'Large','Tier_3','Standard Supermarket',1764.98],
@@ -138,13 +136,3 @@ with tab2:
         category_chart_data = category_chart_data.sort_values(by="total_sales", ascending=False)
         category_chart_data = category_chart_data.set_index('product_category')
         st.bar_chart(category_chart_data, y="total_sales", color="#29B5E8")
-"""
-
-# Force create the absolute core script file name
-with open("streamlit_app.py", "w", encoding="utf-8") as f:
-    f.write(production_app_script)
-
-with open("requirements.txt", "w", encoding="utf-8") as f:
-    f.write("streamlit>=1.35.0\npandas>=2.0.0\nnumpy>=1.24.0\nscikit-learn>=1.3.0\n")
-
-print("✅ Standalone 'streamlit_app.py' file generated cleanly without terminal syntax bugs!")
