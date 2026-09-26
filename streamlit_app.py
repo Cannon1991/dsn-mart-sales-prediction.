@@ -158,6 +158,3 @@ with tab3:
             # Fill missing column parameters cleanly using baseline proxies
             processed_batch['product_weight_kg'] = processed_batch['product_weight_kg'].fillna(12.0)
             processed_batch['store_size'] = processed_batch['store_size'].fillna('Medium')
-            
-            # Feature Synthesis Layer
-            processed_batch['price_per_kg'] = processed_batch['product_price'] / (processed_batch['product_weight_kg'] + 1e-5)
