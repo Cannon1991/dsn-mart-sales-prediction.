@@ -1,3 +1,4 @@
+%%writefile streamlit_app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -14,7 +15,7 @@ st.set_page_config(
     page_icon="📈"
 )
 
-# 📊 Baseline Operational Mock Data Ingestion Layer
+# 📊 Baseline Operational Data Ingestion Layer
 def get_historical_analytics_data():
     sample_records = [
         ['row_00000','PRD-PRFP9S',14.252,'Low Fat',0.0271,'Frozen Foods',81.37,'STORE-AGY',45,'Large','Tier_3','Standard Supermarket',1764.98],
@@ -63,7 +64,6 @@ def train_fallback_ensemble_model(df):
     X = df_train[features]
     y = df_train['total_sales']
     
-    # Base Estimators Proxy for Local Notebook runtime environments
     m1 = RandomForestRegressor(n_estimators=40, max_depth=6, random_state=42)
     m2 = RandomForestRegressor(n_estimators=30, max_depth=5, random_state=24)
     m1.fit(X, y)
@@ -79,7 +79,6 @@ def train_fallback_ensemble_model(df):
 @st.cache_resource
 def load_pipeline_artifacts():
     raw_df = get_historical_analytics_data()
-    # 1. Look for Production Ensemble Binary on GitHub
     if os.path.exists('models/artifacts.pkl'):
         try:
             with open('models/artifacts.pkl', 'rb') as f:
@@ -92,25 +91,22 @@ def load_pipeline_artifacts():
                     )
         except Exception:
             pass
-    # 2. Trigger fallback tracking configurations if serialization files are absent
     m1, m2, preprocessors, features, weight = train_fallback_ensemble_model(raw_df)
     return m1, m2, preprocessors, features, weight, False
 
-# Execute Data Ingestion Lifecycle Methods
+# Execute Data Ingestion
 raw_analytics_df = get_historical_analytics_data()
 model1, model2, preprocessors, features, blend_weight, is_production_ensemble = load_pipeline_artifacts()
 
-# --- INTERFACE APP WEB GRAPHICS ---
+# --- APP LAYOUT ---
 st.title("📈 DSN Mart Retail Intelligence & Revenue Engine")
 st.markdown("Optimize product distribution, spatial visibility parameters, and projected store layout revenue matrix yields across Nigeria.")
 
-# Display Context Alert Banner depending on model architecture
 if is_production_ensemble:
     st.sidebar.success("🏆 Deployed Status: Live Production LightGBM + CatBoost Ensemble Active")
 else:
-    st.sidebar.info("💡 Deployed Status: Fallback Baseline Engine Active (Running on Native Tree Modules)")
+    st.sidebar.info("💡 Deployed Status: Fallback Baseline Engine Active")
 
-# Tabbed Layout Separation Layers
 tab1, tab2, tab3 = st.tabs(["🔮 Demand Forecasting Engine", "📊 Operational Revenue Analytics", "📂 Batch Prediction Center"])
 
 with tab1:
@@ -143,7 +139,6 @@ with tab1:
             'store_size': store_size, 'store_location_tier': store_location_tier, 'store_format': store_format
         }])
         
-        # 🧪 Standard Preprocessing & Feature Engineering Layer Transforms
         input_data['product_category'] = input_data['product_category'].astype(str).str.upper().str.strip()
         input_data['fat_content'] = input_data['fat_content'].astype(str).str.upper().str.strip()
         input_data['product_type_prefix'] = input_data['product_code'].astype(str).str[:3]
@@ -156,3 +151,9 @@ with tab1:
         input_data['price_to_category_avg_ratio'] = input_data['product_price'] / preprocessors['mean_price_map'].get(product_category, product_price)
         input_data['relative_visibility_in_category'] = input_data['shelf_visibility'] / preprocessors['mean_vis_map'].get(product_category, 1.0)
         input_data['sku_historical_mean_sales'] = preprocessors.get('sku_velocity_map', {}).get(product_code, preprocessors['global_sales_mean'])
+        input_data['composite_store_density_proxy'] = store_format + "_" + store_size
+        
+        label_encoders = preprocessors['label_encoders']
+        for col in ['fat_content', 'product_category', 'store_code', 'store_size', 'store_location_tier', 'store_format', 'product_type_prefix', 'composite_store_density_proxy']:
+            le = label_encoders[col]
+            input_data[col] = input_data[col].astype(str).map(lambda s: s if s in le.classes_ else le.classes_)
